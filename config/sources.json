@@ -565,6 +565,12 @@
         "name": "20VC",
         "url": "https://www.youtube.com/@20VC",
         "domain": "invest"
+      },
+      {
+        "id": "csis",
+        "name": "CSIS",
+        "url": "https://www.youtube.com/@csis",
+        "domain": "strategy"
       }
     ]
   }
