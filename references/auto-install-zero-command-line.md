@@ -1,6 +1,6 @@
 # Auto-Install (Zero Command Line)
 
-When a user asks you to install ai-signal (e.g. "帮我安装 https://github.com/Benboerba620/ai-signal"
+When a user asks you to install ai-signal (e.g. "帮我安装 https://github.com/newday1/ai-signal"
 or "set up ai signal"), run these steps automatically — the user should NOT need
 to touch the terminal:
 
@@ -11,7 +11,7 @@ to touch the terminal:
 
 2. Clone and install:
 ```bash
-git clone https://github.com/Benboerba620/ai-signal.git <install_path>
+git clone https://github.com/newday1/ai-signal.git <install_path>
 cd <install_path>/scripts && pip install -r ../requirements.txt
 ```
 
@@ -19,8 +19,8 @@ cd <install_path>/scripts && pip install -r ../requirements.txt
    network issue?). Fix it yourself — do not ask the user to run commands.
    If github.com is unreachable (common in mainland China without a proxy),
    retry the clone through a mirror prefix, e.g.
-   `git clone https://gh-proxy.com/https://github.com/Benboerba620/ai-signal.git <install_path>`
-   or `git clone https://ghfast.top/https://github.com/Benboerba620/ai-signal.git <install_path>`
+   `git clone https://gh-proxy.com/https://github.com/newday1/ai-signal.git <install_path>`
+   or `git clone https://ghfast.top/https://github.com/newday1/ai-signal.git <install_path>`
    (or another gh-proxy-style service if both are down). Daily feed
    fetching does NOT need a proxy afterwards — prepare_digest.py falls back
    through 4 jsDelivr CDN endpoints (cdn / fastly / gcore / testingcf)

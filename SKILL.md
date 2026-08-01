@@ -36,7 +36,7 @@ checkout automatically:
 
 ```bash
 mkdir -p ~/.ai-signal/runtime
-git clone --depth 1 https://github.com/Benboerba620/ai-signal.git ~/.ai-signal/runtime/ai-signal
+git clone --depth 1 https://github.com/newday1/ai-signal.git ~/.ai-signal/runtime/ai-signal
 python -m pip install -r ~/.ai-signal/runtime/ai-signal/requirements.txt
 ```
 

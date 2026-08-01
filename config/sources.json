@@ -24,6 +24,12 @@
         "tier": "analyst"
       },
       {
+        "handle": "SemiAnalysis_",
+        "name": "SemiAnalysis",
+        "domain": "ai",
+        "tier": "analyst"
+      },
+      {
         "handle": "insane_analyst",
         "name": "Irrational Analysis",
         "domain": "ai",
@@ -48,6 +54,18 @@
         "tier": "analyst"
       },
       {
+        "handle": "jukan05",
+        "name": "Jukan",
+        "domain": "ai",
+        "tier": "analyst"
+      },
+      {
+        "handle": "qinbafrank",
+        "name": "qinbafrank",
+        "domain": "ai",
+        "tier": "analyst"
+      },
+      {
         "handle": "sama",
         "name": "Sam Altman",
         "domain": "ai",
@@ -68,6 +86,18 @@
       {
         "handle": "jietang",
         "name": "Tang Jie (Z.ai / Tsinghua)",
+        "domain": "ai",
+        "tier": "exec"
+      },
+      {
+        "handle": "satyanadella",
+        "name": "Satya Nadella",
+        "domain": "ai",
+        "tier": "exec"
+      },
+      {
+        "handle": "lilianweng",
+        "name": "Lilian Weng",
         "domain": "ai",
         "tier": "exec"
       },
@@ -110,6 +140,12 @@
       {
         "handle": "joshwoodward",
         "name": "Josh Woodward (Google Labs)",
+        "domain": "ai",
+        "tier": "builder"
+      },
+      {
+        "handle": "hwchase17",
+        "name": "Harrison Chase",
         "domain": "ai",
         "tier": "builder"
       }

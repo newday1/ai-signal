@@ -31,7 +31,7 @@ from feedback import summarize_feedback
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
 
-RAW_BASE = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main"
+RAW_BASE = "https://raw.githubusercontent.com/newday1/ai-signal/main"
 # Tried in order. raw.githubusercontent.com is blocked in some regions
 # (notably mainland China), and cdn.jsdelivr.net itself is unreliable there
 # since its mainland nodes were shut down. The extra jsDelivr endpoints serve
@@ -40,10 +40,10 @@ RAW_BASE = "https://raw.githubusercontent.com/Benboerba620/ai-signal/main"
 # Override with AI_SIGNAL_BASE_URLS="https://base1,https://base2" if needed.
 MIRROR_BASES = [
     RAW_BASE,
-    "https://cdn.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://fastly.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://gcore.jsdelivr.net/gh/Benboerba620/ai-signal@main",
-    "https://testingcf.jsdelivr.net/gh/Benboerba620/ai-signal@main",
+    "https://cdn.jsdelivr.net/gh/newday1/ai-signal@main",
+    "https://fastly.jsdelivr.net/gh/newday1/ai-signal@main",
+    "https://gcore.jsdelivr.net/gh/newday1/ai-signal@main",
+    "https://testingcf.jsdelivr.net/gh/newday1/ai-signal@main",
 ]
 PROMPT_FILES = [
     "summarize-podcast.md",

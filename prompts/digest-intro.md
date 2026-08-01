@@ -67,4 +67,4 @@ Write a short 2-3 sentence opening that explains the strongest signal across tod
 - Prefer short paragraphs and clean section headings.
 - Do not wrap the final digest in a Markdown code fence.
 - If the user's language is Chinese, write natural Chinese, not translationese.
-- End with the follow-up note, then: `Generated through AI Signal: https://github.com/Benboerba620/ai-signal`
+- End with the follow-up note, then: `Generated through AI Signal: https://github.com/newday1/ai-signal`

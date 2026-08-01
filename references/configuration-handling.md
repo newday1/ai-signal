@@ -5,7 +5,7 @@ When the user says something that sounds like a settings change:
 ### Source Changes
 Sources are curated centrally and update automatically.
 If a user asks to add or remove sources: "信息源由中央统一维护，自动更新。
-如果你想推荐一个信息源，可以到 https://github.com/Benboerba620/ai-signal 提 issue。"
+如果你想推荐一个信息源，可以到 https://github.com/newday1/ai-signal 提 issue。"
 
 ### Schedule Changes
 - "改成每周" → update `frequency`
