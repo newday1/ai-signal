@@ -2,6 +2,12 @@
 
 记录 AI Signal 面向用户的变更。每日的 feed 数据更新（`Feed update` commit）不在此列。
 
+## 2026-08-01
+
+### 新增
+
+- YouTube 订阅频道支持按需展开并按 Podcast 翻译规则出全文：日报里编号 `YT1`/`YT2`；用户说「展开 YT1」「详细解释 YT2」时，Agent 用 `fetch_youtube_transcript.py` 拉该视频字幕，再按 skill 内 `references/podcast-translation-rules.md`（三部结构：核心要点索引 + 英汉双语全文 + 批判与投资分析）生成文档；输出到当前项目相对路径 `podcast/`（已有则用，没有则新建）。展开流程见 `references/youtube-expand-translate.md`。
+
 ## 2026-07-29
 
 ### 修复

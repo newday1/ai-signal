@@ -1,6 +1,6 @@
 ---
 name: ai-signal
-description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, user-configured YouTube channels, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
+description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, user-configured YouTube channels, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Also handles follow-ups like 展开 YT1 / 详细解释 YT2 (YouTube captions → skill-local podcast translation rules). Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
 ---
 # AI Signal — 追踪 AI 一线的声音
 
@@ -58,6 +58,11 @@ Read only the references needed for the current task:
 - Generating or delivering a digest: read
   `references/content-delivery-digest-run.md`. For an explicit on-demand
   request, also read `references/manual-trigger.md`.
+- Expanding YouTube items (`展开 YT1` / `详细解释 YT2` / podcast-style
+  translation of a subscribed channel video): read
+  `references/youtube-expand-translate.md` and
+  `references/podcast-translation-rules.md` (skill-local Podcast rules;
+  self-contained — no external `podcast/AGENTS.md` required).
 - Changing user preferences: read `references/configuration-handling.md`.
 - Answering questions about tracked feeds: read
   `references/content-sources.md`.

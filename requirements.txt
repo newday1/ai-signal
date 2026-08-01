@@ -1,6 +1,9 @@
 # User-side (Agent) dependencies.
 # prepare_digest.py / mark_delivered.py / deliver.py only need httpx.
 # [socks] keeps GitHub raw fetch working behind SOCKS proxies (all_proxy=socks5://...).
+# youtube-transcript-api is used by fetch_youtube_transcript.py when the user
+# expands YT1/YT2 (podcast-style full bilingual translation).
 # Central feed-generation dependencies live in requirements-central.txt.
 httpx[socks]>=0.27
 tzdata>=2024.1
+youtube-transcript-api>=0.6

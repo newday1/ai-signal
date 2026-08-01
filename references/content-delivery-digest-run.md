@@ -88,8 +88,8 @@ Only include content matching the user's `config.domains`:
 ### Step 5: Remix content
 
 **Your ONLY job during the daily digest is to remix content from payload.json.**
-Do NOT fetch anything from the web, visit URLs, or call APIs. The sole exception
-is the explicit podcast follow-up expansion flow below.
+Do NOT fetch anything from the web, visit URLs, or call APIs. The sole exceptions
+are the explicit podcast / YouTube follow-up expansion flows below.
 
 Before writing the digest, read `output_contract` and obey it as the highest
 priority instruction in this payload. If `output_contract.language.must_translate`
@@ -107,7 +107,8 @@ Use the raw JSON fields as the source of truth:
 - X/Twitter: use each tweet's original `text`, `url`, and `created_at`.
 - YouTube (subscribed channels): use `payload.youtube` raw fields only —
   `channel`, `title`, `description`, `link`, `pub_date`, `video_id`. Preview
-  only; do not invent quotes from a transcript that was never fetched.
+  only; do not invent quotes from a transcript that was never fetched. Number
+  included items `YT1`, `YT2`, … in the order they appear in the digest.
 - Podcasts: use metadata, `description`, and `pub_date` for the daily digest. Treat it as a
   first-pass preview, not a full-transcript analysis.
 - Papers: use each paper's `title`, `published`, `abstract`, `abs_url`, and `pdf_url`.
@@ -139,6 +140,14 @@ arguments, quotes, or evidence until the transcript has been fetched through
 the follow-up flow. If
 `transcript_available` is true, mark the item as available for expansion.
 Use `channel`, `title`, `link` from the JSON — NOT from transcript text.
+Number podcast items `P1`, `P2`, …
+
+**YouTube (process after podcasts):**
+For each selected video in `payload.youtube`, write a short preview from title,
+description, channel, and link. Display `pub_date` in the user's configured
+timezone. Number items `YT1`, `YT2`, … Numbering must stay stable for follow-up
+commands. Do not claim detailed arguments or quotes until captions are fetched
+via the YouTube expansion flow.
 
 **Podcast follow-up expansion:**
 The digest is only the first filter. When the user asks to expand a podcast
@@ -166,37 +175,64 @@ written file and produce a deeper breakdown in the user's language with:
 - practical implications for AI products, infrastructure, research, or investing
 - questions worth verifying
 
+**YouTube follow-up expansion (Podcast translation rules):**
+When the user asks to expand a subscribed-channel video — e.g. "展开 YT1",
+"展开 YT1, YT2", "详细解释 YT2", "深读 YT3", "按播客规则翻译 YT1" — do **not**
+use the short podcast breakdown above. Instead follow
+`references/youtube-expand-translate.md` in full:
+
+1. Map `YTn` to the n-th YouTube item you numbered in the latest digest
+   (`payload.youtube` order you used for `YT1`…).
+2. Fetch captions on demand (one video at a time):
+
+```bash
+cd ${SKILL_DIR}/scripts && python fetch_youtube_transcript.py \
+  --video-id <video_id from payload.youtube> \
+  --out /tmp/yt-<video_id>.txt
+# or: --link "<url>" / --title "<substring>"
+# if missing: python -m pip install youtube-transcript-api
+```
+
+3. Read skill-local `references/podcast-translation-rules.md` (exact
+   three-section layout and relative output directory) and produce **one full
+   translation document per video**.
+4. Save under project-relative `podcast/`: use it if present, otherwise create
+   it under the project root. Tell the user the saved path.
+
+Exit codes for `fetch_youtube_transcript.py`: `0` ok; `2` no captions; `3` not
+found; `4` library missing / hard failure. Never invent a transcript.
+
 ### Local Feedback
 
-When the user gives feedback such as "P2 有用", "X1 是噪音", "多看芯片",
+When the user gives feedback such as "P2 有用", "X1 是噪音", "YT1 有用", "多看芯片",
 "少看融资新闻", or equivalent wording, resolve the referenced item from the
 latest digest/payload and record it locally:
 
 ```bash
 cd ${SKILL_DIR}/scripts && python feedback.py record \
   --action <useful|noise|more|less> \
-  --kind <podcast|x|paper|blog|topic> \
+  --kind <podcast|youtube|x|paper|blog|topic> \
   --source "<channel, handle, category, lab, or topic>" \
-  --item-id "<P2, X1, Paper3, or B1 when applicable>" \
-  --stable-id "<guid, tweet id, arXiv id, article id, or topic>" \
+  --item-id "<P2, YT1, X1, Paper3, or B1 when applicable>" \
+  --stable-id "<guid, video_id, tweet id, arXiv id, article id, or topic>" \
   --note "<the user's wording>"
 ```
 
 Do not ask the user to run this command. Do not upload the feedback. It stays in
-`~/.ai-signal/feedback.jsonl`. Successful podcast expansion is recorded
+`~/.ai-signal/feedback.jsonl`. Successful podcast or YouTube expansion is recorded
 automatically as `expanded`; expansion means interest, not necessarily approval,
 so do not treat it as a positive preference by itself.
 
 At the end of every digest, before delivery attribution, add one short line
-telling the user they can pick any podcast, tweet, or paper to expand. For
-Chinese output, use wording like: "想深读的话，可以直接说：展开第 2 个播客。"
+telling the user they can pick any podcast, YouTube video, tweet, or paper to
+expand. For Chinese output, use wording like: "想深读的话，可以直接说：展开第 2 个播客，或 展开 YT1（按播客翻译规则生成双语全文）。"
 
-**Official blogs (process third):**
+**Official blogs (process after YouTube):**
 For each article in `articles`, follow `prompts.summarize_articles`. These are
 first-party announcements from Anthropic / OpenAI / Google DeepMind — present
 them as the company's own claims. Every article MUST include its `url`.
 
-**Papers (process fourth):**
+**Papers (process last):**
 For each arXiv paper, summarize according to granularity:
 - highlights: one sentence on key contribution
 - summary: 2-3 sentences on problem, approach, result

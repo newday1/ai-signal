@@ -8,7 +8,11 @@ SemiAnalysis (Dylan Patel), Google DeepMind, Lightcone (YC), Lenny's Podcast,
 Invest Like the Best, Capital Allocators, The Acquirers Podcast
 
 ### YouTube channel subscriptions (local `sources.json` → `youtube.channels`)
-User-configured channels (e.g. `https://www.youtube.com/@LennysPodcast`). On
+User-configured channels (e.g. `https://www.youtube.com/@LennysPodcast`). Digest
+items are numbered `YT1`/`YT2`; saying `展开 YT1` or `详细解释 YT2` runs
+`references/youtube-expand-translate.md` (captions +
+`references/podcast-translation-rules.md`).
+On
 every daily digest run, `prepare_digest.py` live-fetches raw video metadata first
 (title, link, pub_date, description) into `feeds/feed-youtube.json` /
 `payload.youtube`. Optional `channel_id` (UC…) avoids HTML resolution.
