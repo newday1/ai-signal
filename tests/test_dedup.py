@@ -203,10 +203,17 @@ class DigestDedupTests(unittest.TestCase):
         }
         papers = [{"arxiv_id": "2607.00001"}, {"arxiv_id": "2607.00001"}]
         articles = [{"id": "blog-1"}, {"id": "blog-1"}]
-        seen = {"tweets": {}, "episodes": {}, "papers": {}, "articles": {}}
+        youtube = [
+            {"video_id": "vid-1", "title": "A"},
+            {"video_id": "vid-1", "title": "A duplicate"},
+            {"video_id": "vid-2", "title": "B"},
+        ]
+        seen = {"tweets": {}, "episodes": {}, "papers": {}, "articles": {}, "youtube": {}}
 
-        accounts, episodes, fresh_papers, fresh_articles, marks = prepare_digest.filter_unseen(
-            feed_x, feed_podcasts, papers, articles, seen
+        accounts, episodes, fresh_papers, fresh_articles, fresh_youtube, marks = (
+            prepare_digest.filter_unseen(
+                feed_x, feed_podcasts, papers, articles, youtube, seen
+            )
         )
 
         self.assertEqual([[tweet.get("id") for tweet in a["tweets"]] for a in accounts],
@@ -214,8 +221,10 @@ class DigestDedupTests(unittest.TestCase):
         self.assertEqual(len(episodes), 1)
         self.assertEqual(len(fresh_papers), 1)
         self.assertEqual(len(fresh_articles), 1)
+        self.assertEqual(len(fresh_youtube), 2)
         self.assertEqual(set(marks["tweets"]), {"tweet-1", "tweet-2"})
         self.assertEqual(set(marks["episodes"]), {"episode-1"})
+        self.assertEqual(set(marks["youtube"]), {"vid-1", "vid-2"})
 
 
 class FeedValidationTests(unittest.TestCase):

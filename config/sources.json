@@ -476,5 +476,96 @@
         "url": "https://deepmind.google/blog/rss.xml"
       }
     ]
+  },
+  "youtube": {
+    "lookback_hours": 168,
+    "max_videos_per_channel": null,
+    "min_duration_minutes": 15,
+    "channels": [
+      {
+        "id": "lennys-podcast",
+        "name": "Lenny's Podcast",
+        "url": "https://www.youtube.com/@LennysPodcast",
+        "domain": "ai"
+      },
+      {
+        "id": "sequoia-capital",
+        "name": "Sequoia Capital",
+        "url": "https://www.youtube.com/@sequoiacapital",
+        "domain": "invest"
+      },
+      {
+        "id": "semianalysis",
+        "name": "SemiAnalysis",
+        "url": "https://www.youtube.com/@SemiAnalysis",
+        "domain": "ai"
+      },
+      {
+        "id": "all-about-ai",
+        "name": "All About AI",
+        "url": "https://www.youtube.com/@AllAboutAI",
+        "domain": "ai"
+      },
+      {
+        "id": "dwarkesh-patel",
+        "name": "Dwarkesh Patel",
+        "url": "https://www.youtube.com/@DwarkeshPatel",
+        "domain": "ai"
+      },
+      {
+        "id": "all-in",
+        "name": "All-In Podcast",
+        "url": "https://www.youtube.com/@allin",
+        "domain": "ai"
+      },
+      {
+        "id": "hard-fork",
+        "name": "Hard Fork",
+        "url": "https://www.youtube.com/@hardfork",
+        "domain": "ai"
+      },
+      {
+        "id": "iltb-podcast",
+        "name": "Invest Like the Best",
+        "url": "https://www.youtube.com/@ILTB_Podcast",
+        "domain": "invest"
+      },
+      {
+        "id": "lex-fridman",
+        "name": "Lex Fridman",
+        "url": "https://www.youtube.com/@lexfridman",
+        "domain": "ai"
+      },
+      {
+        "id": "latent-space",
+        "name": "Latent Space",
+        "url": "https://www.youtube.com/@LatentSpacePod",
+        "domain": "ai"
+      },
+      {
+        "id": "wsj-podcasts",
+        "name": "WSJ Podcasts",
+        "url": "https://www.youtube.com/@WSJPodcasts",
+        "domain": "invest"
+      },
+      {
+        "id": "a16z",
+        "name": "a16z",
+        "url": "https://www.youtube.com/@a16z",
+        "domain": "ai"
+      },
+      {
+        "id": "no-priors",
+        "name": "No Priors",
+        "url": "https://www.youtube.com/@NoPriorsPodcast",
+        "domain": "ai"
+      },
+      {
+        "id": "20vc",
+        "name": "20VC",
+        "url": "https://www.youtube.com/@20VC",
+        "domain": "invest"
+      }
+    ]
   }
 }

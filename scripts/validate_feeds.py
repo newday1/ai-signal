@@ -98,6 +98,7 @@ def validate():
     podcasts = load_items("feed-podcasts.json", "podcasts")
     papers = load_items("feed-arxiv.json", "papers")
     articles = load_items("feed-blogs.json", "articles")
+    youtube_videos = load_optional_items("feed-youtube.json", "videos")
     transcript_index = load_optional_items("feed-transcripts-index.json", "transcripts")
 
     checks = {
@@ -108,6 +109,9 @@ def validate():
         ),
         "arXiv IDs": duplicate_values(paper.get("arxiv_id") for paper in papers),
         "blog IDs": duplicate_values(article.get("id") or article.get("url") for article in articles),
+        "youtube video IDs": duplicate_values(
+            v.get("video_id") or v.get("id") or v.get("link") for v in youtube_videos
+        ),
         "podcast transcript sidecars": transcript_sidecar_failures(podcasts),
         "transcript index IDs": duplicate_values(
             item.get("guid") or item.get("link") or item.get("title") for item in transcript_index

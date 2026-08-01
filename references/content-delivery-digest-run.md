@@ -19,14 +19,31 @@ Read `~/.ai-signal/config.json` for user preferences.
 cd ${SKILL_DIR}/scripts && python prepare_digest.py 2>/dev/null
 ```
 
+**YouTube runs first inside `prepare_digest.py`.** Before pulling central
+feeds, the script reads `config/sources.json` → `youtube.channels` and live-
+fetches raw channel listings (title / link / pub_date / description) into
+`feeds/feed-youtube.json` and `payload.youtube`. No transcripts and no LLM at
+this stage — raw metadata only. Configure channels like
+`https://www.youtube.com/@LennysPodcast` (optional `channel_id` UC… skips HTML
+resolution). If `youtube.channels` is empty, this step is a no-op.
+
+Standalone refresh (optional):
+
+```bash
+cd ${SKILL_DIR}/scripts && python youtube_feed.py
+# or: python generate_feed.py --youtube-only
+```
+
 The script writes the full content to files and prints a **small JSON manifest**
 to stdout (a few KB — safe to read in any agent). The manifest contains:
 - `payload_file` — absolute path to `payload.json` (full content minus transcripts)
 - `config` — user's language, granularity, domains, delivery preferences
 - `output_contract` — mandatory generation contract, especially language rules
-- `feed_sources` — whether each feed came from GitHub raw (`remote`) or local cache
-- `stats` — content counts
+- `feed_sources` — whether each feed came from GitHub raw (`remote`) or local cache;
+  YouTube is `local_fetch` from `sources.json`
+- `stats` — content counts (includes `youtube_videos`)
 - `feedback_summary` — local useful/noise/more/less/expanded history for soft ranking
+- `youtube` — raw video metadata from configured channels (`video_id`, title, link, pub_date)
 - `podcasts` — episode metadata with `guid`, transcript availability, and size
 - `x_accounts` — accounts that have new tweets
 - `seen_filter` — items already delivered before are filtered out automatically
@@ -59,7 +76,7 @@ If the script fails entirely (no JSON output), tell the user to check internet.
 
 ### Step 3: Check for content
 
-If all counts are 0 (no tweets, no episodes, no articles, no papers), tell the user:
+If all counts are 0 (no tweets, no episodes, no YouTube videos, no articles, no papers), tell the user:
 "今天暂无更新，明天再看！" Then stop.
 
 ### Step 4: Filter by domains
@@ -88,6 +105,9 @@ feedback.
 
 Use the raw JSON fields as the source of truth:
 - X/Twitter: use each tweet's original `text`, `url`, and `created_at`.
+- YouTube (subscribed channels): use `payload.youtube` raw fields only —
+  `channel`, `title`, `description`, `link`, `pub_date`, `video_id`. Preview
+  only; do not invent quotes from a transcript that was never fetched.
 - Podcasts: use metadata, `description`, and `pub_date` for the daily digest. Treat it as a
   first-pass preview, not a full-transcript analysis.
 - Papers: use each paper's `title`, `published`, `abstract`, `abs_url`, and `pdf_url`.

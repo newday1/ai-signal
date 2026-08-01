@@ -1,6 +1,6 @@
 ---
 name: ai-signal
-description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
+description: AI Signal daily digest for Agent users — tracks top AI builders on X, podcasts, user-configured YouTube channels, official AI-lab blogs (Anthropic / OpenAI / DeepMind), and arXiv papers, then remixes central JSON feeds into a personalized digest. Use when the user wants AI/investing insights or invokes /ai-signal. No content API keys required.
 ---
 # AI Signal — 追踪 AI 一线的声音
 
@@ -16,10 +16,12 @@ finished newsletter by itself. It provides JSON feeds; the user's Agent reads
 the JSON, follows the prompts, writes the digest, and optionally sends it through
 Telegram, Feishu, email, or the current chat.
 
-**No content API keys are required from users.** All source content (X/Twitter
+**No content API keys are required from users.** Most source content (X/Twitter
 posts, podcast transcripts/descriptions, official AI-lab blog announcements,
-arXiv papers) is fetched centrally and served via public JSON feeds. Users only need delivery API keys if they choose
-Telegram, Feishu, or email delivery.
+arXiv papers) is fetched centrally and served via public JSON feeds. YouTube
+channel subscriptions in local `config/sources.json` → `youtube.channels` are
+live-fetched first on each digest run (raw metadata only). Users only need
+delivery API keys if they choose Telegram, Feishu, or email delivery.
 
 Default mode is **JSON-first**. Do not depend on central Chinese summaries.
 Central summaries are legacy/debug-only and should be ignored unless the user's

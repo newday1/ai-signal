@@ -27,6 +27,7 @@ from pathlib import Path
 import httpx
 
 from feedback import summarize_feedback
+from youtube_feed import fetch_and_write_youtube, load_sources as load_local_sources
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -177,6 +178,7 @@ def build_output_contract(config):
                 "x": "created_at",
                 "podcasts": "pub_date",
                 "papers": "published",
+                "youtube": "pub_date",
             },
             "missing_value": "Show the time as unverified; never infer it from feed or discovery time.",
         },
@@ -184,13 +186,18 @@ def build_output_contract(config):
             "Select only AI/product/research/infrastructure/investing-relevant items.",
             "Every included item must keep its original URL.",
             (
-                f"Every included X post, podcast, and paper must display its source timestamp in "
-                f"{timezone_name}: X uses created_at, podcasts use pub_date, and papers use published "
-                "as the first-submission time. If the field is empty, say the time is unverified; "
-                "never substitute generated_at or first_seen."
+                f"Every included X post, podcast, YouTube video, and paper must display its source "
+                f"timestamp in {timezone_name}: X uses created_at, podcasts and YouTube use pub_date, "
+                "and papers use published as the first-submission time. If the field is empty, say "
+                "the time is unverified; never substitute generated_at or first_seen."
             ),
             "For X/Twitter, keep each selected tweet as its own item and preserve the original text.",
             "For the daily digest, use podcast metadata and description only; fetch a transcript only after an explicit expansion request.",
+            (
+                "For YouTube channel subscriptions (payload.youtube), use only the raw metadata "
+                "already fetched: title, description, channel, link, pub_date. Do not browse "
+                "YouTube or invent transcript content in the daily digest."
+            ),
             "For papers, keep title, arXiv link, and a short summary.",
             "For official blog articles, keep source name, title, link, and a short summary of what was announced.",
             "Do not fabricate quotes, numbers, claims, or source details.",
@@ -208,14 +215,14 @@ def load_seen():
             seen = json.loads(SEEN_PATH.read_text("utf-8"))
         except Exception:
             seen = {}
-    for key in ("tweets", "episodes", "papers", "articles"):
+    for key in ("tweets", "episodes", "papers", "articles", "youtube"):
         seen.setdefault(key, {})
     return seen
 
 
 def save_seen(seen):
     cutoff = (datetime.now(timezone.utc) - timedelta(days=SEEN_RETENTION_DAYS)).isoformat()
-    for key in ("tweets", "episodes", "papers", "articles"):
+    for key in ("tweets", "episodes", "papers", "articles", "youtube"):
         seen[key] = {k: v for k, v in seen.get(key, {}).items() if v > cutoff}
     SEEN_PATH.parent.mkdir(parents=True, exist_ok=True)
     SEEN_PATH.write_text(json.dumps(seen, indent=2), encoding="utf-8")
@@ -225,10 +232,20 @@ def episode_key(episode):
     return episode.get("guid") or episode.get("link") or episode.get("title") or ""
 
 
-def filter_unseen(feed_x, feed_podcasts, papers, articles, seen):
+def youtube_key(video):
+    return video.get("video_id") or video.get("id") or video.get("link") or video.get("title") or ""
+
+
+def filter_unseen(feed_x, feed_podcasts, papers, articles, youtube_videos, seen):
     now = datetime.now(timezone.utc).isoformat()
-    new_ids = {"tweets": [], "episodes": [], "papers": [], "articles": []}
-    emitted = {"tweets": set(), "episodes": set(), "papers": set(), "articles": set()}
+    new_ids = {"tweets": [], "episodes": [], "papers": [], "articles": [], "youtube": []}
+    emitted = {
+        "tweets": set(),
+        "episodes": set(),
+        "papers": set(),
+        "articles": set(),
+        "youtube": set(),
+    }
 
     accounts = []
     for account in (feed_x or {}).get("x", []):
@@ -273,8 +290,18 @@ def filter_unseen(feed_x, feed_podcasts, papers, articles, seen):
             new_ids["articles"].append(aid)
         fresh_articles.append(article)
 
+    fresh_youtube = []
+    for video in youtube_videos or []:
+        key = str(youtube_key(video))
+        if key and (key in seen["youtube"] or key in emitted["youtube"]):
+            continue
+        if key:
+            emitted["youtube"].add(key)
+            new_ids["youtube"].append(key)
+        fresh_youtube.append(video)
+
     marks = {kind: {i: now for i in ids} for kind, ids in new_ids.items()}
-    return accounts, episodes, fresh_papers, fresh_articles, marks
+    return accounts, episodes, fresh_papers, fresh_articles, fresh_youtube, marks
 
 
 # ── Payload files ─────────────────────────────────────────────────────────────
@@ -490,12 +517,17 @@ def annotate_feed_sources(feed_sources, feeds):
         feed = feeds.get(key)
         item = dict(meta)
         age = feed_age_hours(feed)
-        if age is not None:
+        if item.get("source") in {"disabled"}:
+            item["age_hours"] = None
+            item["is_stale"] = False
+        elif age is not None:
             item["age_hours"] = round(age, 2)
             item["is_stale"] = age > FEED_STALE_AFTER_HOURS
         else:
             item["age_hours"] = None
-            item["is_stale"] = bool(feed)
+            # Fresh local YouTube fetch without generated_at should not warn;
+            # missing timestamps on remote feeds still flag as stale.
+            item["is_stale"] = bool(feed) and item.get("source") not in {"local_fetch"}
         if item["source"] == "local_cache":
             warnings.append(
                 f"{key} feed used local cache because {item.get('reason')}; data may not be latest"
@@ -608,7 +640,54 @@ def main():
         except Exception as e:
             errors.append(f"Config read error: {e}")
 
-    # 2. Fetch feeds
+    # 2. YouTube first: live-fetch raw channel listings from local sources.json
+    #    (user-configured subscriptions). Runs before central feeds so the
+    #    digest always has fresh YouTube metadata when channels are configured.
+    feed_youtube = {"videos": [], "generated_at": None, "errors": None}
+    youtube_source = feed_meta(
+        "feed-youtube.json",
+        str(ROOT_DIR / "feeds" / "feed-youtube.json"),
+        "local_fetch",
+        feed_youtube,
+    )
+    try:
+        local_sources = load_local_sources()
+        yt_channels = (local_sources.get("youtube") or {}).get("channels") or []
+        if yt_channels:
+            print("━━━ YouTube (raw, local sources.json) ━━━", file=sys.stderr)
+            feed_youtube = fetch_and_write_youtube(sources=local_sources)
+            youtube_source = feed_meta(
+                "feed-youtube.json",
+                str(ROOT_DIR / "feeds" / "feed-youtube.json"),
+                "local_fetch",
+                feed_youtube,
+            )
+            if feed_youtube.get("errors"):
+                for err in feed_youtube["errors"]:
+                    warnings.append(f"YouTube: {err}")
+        else:
+            youtube_source = feed_meta(
+                "feed-youtube.json",
+                str(ROOT_DIR / "feeds" / "feed-youtube.json"),
+                "disabled",
+                feed_youtube,
+                "no_youtube_channels_in_sources",
+            )
+    except Exception as e:
+        errors.append(f"YouTube fetch error: {e}")
+        cached = load_local_json("feed-youtube.json")
+        if cached and cached.get("videos") is not None:
+            feed_youtube = cached
+            youtube_source = feed_meta(
+                "feed-youtube.json",
+                str(ROOT_DIR / "feeds" / "feed-youtube.json"),
+                "local_cache",
+                feed_youtube,
+                "local_fetch_failed",
+            )
+            warnings.append(f"YouTube live fetch failed ({e}); using local feed-youtube.json cache")
+
+    # 3. Fetch central feeds (X / podcasts / arXiv / blogs)
     feed_x, x_source = fetch_feed("feed-x.json", "x")
     feed_podcasts, podcast_source = fetch_feed("feed-podcasts.json", "podcasts")
     feed_arxiv, arxiv_source = fetch_feed("feed-arxiv.json", "papers")
@@ -621,6 +700,7 @@ def main():
         summaries_source = feed_meta("feed-summaries.json", f"{RAW_BASE}/feeds/feed-summaries.json", "disabled", None)
     feed_sources, source_warnings = annotate_feed_sources(
         {
+            "youtube": youtube_source,
             "x": x_source,
             "podcasts": podcast_source,
             "arxiv": arxiv_source,
@@ -628,6 +708,7 @@ def main():
             "summaries": summaries_source,
         },
         {
+            "youtube": feed_youtube,
             "x": feed_x,
             "podcasts": feed_podcasts,
             "arxiv": feed_arxiv,
@@ -653,7 +734,7 @@ def main():
         # Newer feed: older central snapshots/mirror caches may not have it yet
         warnings.append("Could not fetch official blog feed; skipping blog articles this run")
 
-    # 3. Load prompts: user custom > remote > local
+    # 4. Load prompts: user custom > remote > local
     prompts = {}
     user_prompts_dir = USER_DIR / "prompts"
     local_prompts_dir = ROOT_DIR / "prompts"
@@ -675,27 +756,36 @@ def main():
         else:
             errors.append(f"Could not load prompt: {filename}")
 
-    # 4. Per-user dedup: central feeds are rolling windows, drop what this
+    # 5. Per-user dedup: central feeds are rolling windows, drop what this
     #    user has already been shown
     seen = load_seen()
+    raw_youtube = (feed_youtube or {}).get("videos", [])
     if args.include_seen:
         x_accounts = (feed_x or {}).get("x", [])
         episodes = (feed_podcasts or {}).get("podcasts", [])
         papers = (feed_arxiv or {}).get("papers", [])
         articles = (feed_blogs or {}).get("articles", [])
-        marks = {"tweets": {}, "episodes": {}, "papers": {}, "articles": {}}
+        youtube_videos = raw_youtube
+        marks = {"tweets": {}, "episodes": {}, "papers": {}, "articles": {}, "youtube": {}}
     else:
-        x_accounts, episodes, papers, articles, marks = filter_unseen(
+        x_accounts, episodes, papers, articles, youtube_videos, marks = filter_unseen(
             feed_x,
             feed_podcasts,
             (feed_arxiv or {}).get("papers", []),
             (feed_blogs or {}).get("articles", []),
+            raw_youtube,
             seen,
         )
 
-    # 5. Build output
+    # 6. Build output
     language = normalize_language(config.get("language", "en"))
     domains = config.get("domains", ["ai", "invest"])
+    # Domain filter for local YouTube subscriptions
+    if domains:
+        youtube_videos = [
+            v for v in youtube_videos
+            if (v.get("domain") or "ai") in domains
+        ]
     summary_profile = choose_summary_profile(config)
     available_summary_profiles = sorted(((feed_summaries or {}).get("profiles") or {}).keys())
     selected_summary = ((feed_summaries or {}).get("profiles") or {}).get(summary_profile)
@@ -736,6 +826,7 @@ def main():
     stats = {
         "podcast_episodes": len(episodes),
         "podcast_with_transcript": sum(1 for e in episodes if e.get("transcript_available")),
+        "youtube_videos": len(youtube_videos),
         "central_x_summaries": len((central_summaries or {}).get("x", [])),
         "central_podcast_summaries": len((central_summaries or {}).get("podcasts", [])),
         "central_paper_summaries": len((central_summaries or {}).get("papers", [])),
@@ -762,11 +853,16 @@ def main():
     output = {
         "status": "ok",
         "mode": "json_first",
-        "generated_at": (feed_x or {}).get("generated_at") or (feed_podcasts or {}).get("generated_at"),
+        "generated_at": (
+            (feed_youtube or {}).get("generated_at")
+            or (feed_x or {}).get("generated_at")
+            or (feed_podcasts or {}).get("generated_at")
+        ),
         "config": config_out,
         "output_contract": output_contract,
         "feed_sources": feed_sources,
         "central_summaries": central_summaries,
+        "youtube": youtube_videos,
         "podcasts": episodes,
         "x": x_accounts,
         "papers": papers,
@@ -778,7 +874,7 @@ def main():
         "errors": errors if errors else None,
     }
 
-    # 6. Write payload files (full content) + print compact manifest (stdout)
+    # 7. Write payload files (full content) + print compact manifest (stdout)
     out_dir = Path(args.out)
     try:
         payload_path, slim_episodes = write_payload(out_dir, output, episodes)
@@ -816,6 +912,16 @@ def main():
         "feed_sources": feed_sources,
         "stats": stats,
         "feedback_summary": feedback_summary,
+        "youtube": [
+            {
+                "channel": v.get("channel"),
+                "video_id": v.get("video_id"),
+                "title": v.get("title"),
+                "pub_date": v.get("pub_date"),
+                "link": v.get("link"),
+            }
+            for v in youtube_videos
+        ],
         "podcasts": [
             {
                 "channel": ep.get("channel"),

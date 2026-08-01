@@ -1,4 +1,4 @@
-"""Central feed generator — fetches raw content from Twitter + podcasts + arXiv.
+"""Central feed generator — fetches raw content from Twitter + podcasts + arXiv + YouTube.
 
 Runs on GitHub Actions daily. Outputs raw content (no LLM summarization).
 Subscribers pull the feed JSON and use their own LLM to generate digests.
@@ -7,8 +7,12 @@ Feeds are stateless rolling-window snapshots: every run publishes ALL content
 inside each source's lookback window, so extra manual runs never eat content.
 Per-user "already seen" dedup happens client-side in prepare_digest.py.
 
+YouTube channel listings (config `youtube.channels`) also refresh on full runs
+and via `--youtube-only`. The daily digest path live-fetches them first inside
+prepare_digest.py so local sources.json subscriptions stay current.
+
 Usage:
-    python scripts/generate_feed.py [--twitter-only | --podcasts-only | --arxiv-only | --people-only]
+    python scripts/generate_feed.py [--twitter-only | --podcasts-only | --arxiv-only | --youtube-only | --people-only]
 
 --people-only refreshes just the person-appearance searches (config
 podcasts.people) and keeps existing channel episodes in feed-podcasts.json.
@@ -36,6 +40,7 @@ from urllib.parse import quote_plus, urljoin, urlparse
 import httpx
 
 from podcast_transcripts import externalize_transcripts, hydrate_transcripts
+from youtube_feed import fetch_youtube
 
 SCRIPT_DIR = Path(__file__).parent
 ROOT_DIR = SCRIPT_DIR.parent
@@ -1828,6 +1833,8 @@ async def main():
     parser.add_argument("--podcasts-only", action="store_true")
     parser.add_argument("--arxiv-only", action="store_true")
     parser.add_argument("--blogs-only", action="store_true")
+    parser.add_argument("--youtube-only", action="store_true",
+                        help="refresh sources.json youtube channel listings only")
     parser.add_argument("--people-only", action="store_true",
                         help="refresh person-appearance searches only; keep channel episodes as-is")
     args = parser.parse_args()
@@ -1837,7 +1844,7 @@ async def main():
     FEEDS_DIR.mkdir(parents=True, exist_ok=True)
 
     run_all = not (args.twitter_only or args.podcasts_only or args.arxiv_only
-                   or args.blogs_only or args.people_only)
+                   or args.blogs_only or args.youtube_only or args.people_only)
 
     if run_all or args.twitter_only:
         log("\n━━━ Twitter/X ━━━")
@@ -1879,6 +1886,17 @@ async def main():
                 blogs_feed = existing_blogs
         write_json(FEEDS_DIR / "feed-blogs.json", blogs_feed)
         log(f"✅ feed-blogs.json ({len(blogs_feed['articles'])} articles)")
+
+    if run_all or args.youtube_only:
+        log("\n━━━ YouTube channels ━━━")
+        youtube_feed = fetch_youtube(sources)
+        if not youtube_feed.get("videos") and youtube_feed.get("errors"):
+            existing_yt = load_feed("feed-youtube.json")
+            if existing_yt and existing_yt.get("videos"):
+                log("ℹ️  YouTube fetch failed; keeping existing feed-youtube.json")
+                youtube_feed = existing_yt
+        write_json(FEEDS_DIR / "feed-youtube.json", youtube_feed)
+        log(f"✅ feed-youtube.json ({len(youtube_feed.get('videos') or [])} videos)")
 
     log("\n🎉 Feed generation complete")
 

@@ -7,6 +7,14 @@ Dwarkesh Patel, Lex Fridman, Latent Space, All-In Podcast, a16z, Naval, No Prior
 SemiAnalysis (Dylan Patel), Google DeepMind, Lightcone (YC), Lenny's Podcast,
 Invest Like the Best, Capital Allocators, The Acquirers Podcast
 
+### YouTube channel subscriptions (local `sources.json` → `youtube.channels`)
+User-configured channels (e.g. `https://www.youtube.com/@LennysPodcast`). On
+every daily digest run, `prepare_digest.py` live-fetches raw video metadata first
+(title, link, pub_date, description) into `feeds/feed-youtube.json` /
+`payload.youtube`. Optional `channel_id` (UC…) avoids HTML resolution.
+`max_videos_per_channel` defaults to unlimited (`null`): keep every video inside
+`lookback_hours` that the channel Atom RSS returns (no artificial per-channel cap).
+
 ### People tracking (28 people, YouTube-wide guest search)
 Beyond the fixed channels, the central feed searches YouTube daily for these
 people appearing as podcast/interview **guests** anywhere, limited server-side
